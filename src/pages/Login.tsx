@@ -6,23 +6,58 @@ import "react-toastify/dist/ReactToastify.css";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    // Validation
     if (!phone || !password) {
       toast.error("All fields are required.");
       return;
     }
     
-    // Basic phone number validation
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(phone)) {
       toast.error("Please enter a valid 10-digit phone number.");
       return;
     }
 
-    // If validation passes, navigate to home
-    navigate("/home");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      // Store user data in localStorage or state management solution
+      localStorage.setItem("userEmail", data.email);
+      
+      toast.success("Login successful!");
+      navigate("/home");
+    } catch (error) {
+      if (error.message === "User not found") {
+        toast.error("Account not found. Please sign up first.");
+      } else if (error.message === "Please verify your account first") {
+        toast.error("Please verify your account first.");
+      } else {
+        toast.error(error.message || "Login failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,6 +73,7 @@ const Login = () => {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Enter Phone Number"
             className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
           />
         </div>
 
@@ -49,14 +85,20 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter Password"
             className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
           />
         </div>
 
         <button
           onClick={handleLogin}
-          className="w-full py-3 bg-blue-500 hover:bg-blue-600 rounded-lg text-lg font-semibold mb-4"
+          disabled={isLoading}
+          className={`w-full py-3 ${
+            isLoading 
+              ? "bg-blue-400 cursor-not-allowed" 
+              : "bg-blue-500 hover:bg-blue-600"
+          } rounded-lg text-lg font-semibold mb-4`}
         >
-          Login
+          {isLoading ? "Logging in..." : "Login"}
         </button>
 
         <p className="text-center text-gray-400">
@@ -67,7 +109,6 @@ const Login = () => {
         </p>
       </div>
 
-      {/* ToastContainer should be included once in your app, typically in the root component */}
       <ToastContainer
         position="top-center"
         autoClose={5000}
