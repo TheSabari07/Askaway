@@ -18,6 +18,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/signup", handlers.SignupHandler).Methods("POST") 
 	router.HandleFunc("/verify-otp", handlers.VerifyOTPHandler).Methods("POST") 
+	router.HandleFunc("/login", handlers.LoginHandler).Methods("POST")
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
